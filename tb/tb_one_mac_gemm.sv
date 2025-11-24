@@ -131,20 +131,19 @@ module tb_one_mac_gemm;
   );
 
   //---------------------------
-  // Useful tasks and functions
+  // Tasks and functions
   //---------------------------
   `include "includes/common_tasks.svh"
   `include "includes/test_tasks.svh"
   `include "includes/test_func.svh"
 
   //---------------------------
-  // Start of Testbench
+  // Start of testbench
   //---------------------------
 
   // Clock generation
   initial begin
     clk_i = 1'b0;
-    start = 1'b0;
     forever #5 clk_i = ~clk_i;  // 100MHz clock
   end
 
@@ -152,6 +151,7 @@ module tb_one_mac_gemm;
   initial begin
   
     // Initial reset
+    start = 1'b0;
     rst_ni = 1'b0;
     #50;
     rst_ni = 1'b1;
