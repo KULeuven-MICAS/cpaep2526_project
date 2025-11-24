@@ -1,4 +1,5 @@
-rtl/mac_pe.sv
+rtl/general_mac_pe.sv
+rtl/multi_port_memory.sv
 rtl/ceiling_counter.sv
 rtl/gemm_controller.sv
 rtl/gemm_accelerator_top.sv
