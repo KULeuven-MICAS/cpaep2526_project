@@ -65,19 +65,19 @@ module gemm_accelerator_top #(
 
   // The MAC PE instantiation and data path logics
   general_mac_pe #(
-      .InDataWidth ( InDataWidth             ),
-      .NumInputs   ( 1             ),
-      .OutDataWidth ( OutDataWidth             )
+    .InDataWidth  ( InDataWidth            ),
+    .NumInputs    ( 1                      ),
+    .OutDataWidth ( OutDataWidth           )
   ) i_mac_pe (
-      .clk_i      ( clk_i                  ),
-      .rst_ni     ( rst_ni                 ),
-      .a_i        ( sram_a_rdata_i         ),
-      .b_i        ( sram_b_rdata_i         ),
-      .a_valid_i  ( valid_data             ),
-      .b_valid_i  ( valid_data             ),
-      .init_save_i( sram_c_we_o || start_i ),
-      .acc_clr_i  ( !busy ), // Clear accumulator when writing back
-      .c_o        ( sram_c_wdata_o         )
+    .clk_i        ( clk_i                  ),
+    .rst_ni       ( rst_ni                 ),
+    .a_i          ( sram_a_rdata_i         ),
+    .b_i          ( sram_b_rdata_i         ),
+    .a_valid_i    ( valid_data             ),
+    .b_valid_i    ( valid_data             ),
+    .init_save_i  ( sram_c_we_o || start_i ),
+    .acc_clr_i    ( !busy                  ),
+    .c_o          ( sram_c_wdata_o         )
   );
 
 endmodule
