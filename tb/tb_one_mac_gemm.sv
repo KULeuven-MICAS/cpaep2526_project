@@ -1,169 +1,160 @@
 module tb_one_mac_gemm;
-  ////////////////////////////
-  // Design Time Parameters //
-  ////////////////////////////
+  //---------------------------
+  // Design Time Parameters
+  //---------------------------
 
-  // SRAM Parameters
-  localparam int DataWidthA = 8;
-  localparam int DataDepthA = 1024;
-  localparam int DataWidthB = 8;
-  localparam int DataDepthB = 1024;
-  localparam int DataWidthC = 32;
-  localparam int DataDepthC = 1024;
+   // General Parameters
+  localparam int unsigned InDataWidth   = 8;
+  localparam int unsigned OutDataWidth  = 32;
+  localparam int unsigned DataDepth     = 4096;
+  localparam int unsigned AddrWidth     = (DataDepth <= 1) ? 1 : $clog2(DataDepth);
+  localparam int unsigned SizeAddrWidth = 8;
 
-  // The address width for the system
-  localparam int AddrWidthA = (DataDepthA <= 1) ? 1 : $clog2(DataDepthA);
-  localparam int AddrWidthB = (DataDepthB <= 1) ? 1 : $clog2(DataDepthB);
-  localparam int AddrWidthC = (DataDepthC <= 1) ? 1 : $clog2(DataDepthC);
-  localparam int
-  MaxDataDepth = (DataDepthA >= DataDepthB) ?
-                                 ((DataDepthA >= DataDepthC) ? DataDepthA : DataDepthC) :
-                                 ((DataDepthB >= DataDepthC) ? DataDepthB : DataDepthC);
-  localparam int AddrWidth = (MaxDataDepth <= 1) ? 1 : $clog2(MaxDataDepth);
+  localparam int unsigned NumInputA  = 1;
+  localparam int unsigned NumInputB  = 1;
+  localparam int unsigned NumOutputC = 1;
 
-  ///////////////////
-  // Test Sequence //
-  ///////////////////
-  `include "gen_data/tasks.svh"
+  //---------------------------
+  // Test Parameters
+  //---------------------------
+  localparam int unsigned MaxNum = 32;
+  localparam int unsigned NumTests = 1;
 
-  ////////////////////////////////////////////////////////////////////////////
-  // Runtime Configurations, will be assigned with meaningful numbers later //
-  ////////////////////////////////////////////////////////////////////////////
+  //---------------------------
+  // Wires
+  //---------------------------
+  // Size control
+  logic [SizeAddrWidth-1:0] M_i, K_i, N_i;
 
-  int   M = 0;
-  int   K = 0;
-  int   N = 0;
-
-  ////////////////////////
-  // Start of Testbench //
-  ////////////////////////
-
-  // Clock and reset
+  // Clock, reset, and other signals
   logic clk_i;
   logic rst_ni;
   logic start;
-  initial begin
-    clk_i = 1'b0;
-    start = 1'b0;
-    forever #5 clk_i = ~clk_i;  // 100MHz clock
-  end
-  initial begin
-    rst_ni = 1'b0;
-    #50;
-    rst_ni = 1'b1;
-  end
-
-  // A, B, and C SRAM interfaces
-  logic [AddrWidthA-1:0] sram_a_addr;
-  logic [DataWidthA-1:0] sram_a_rdata;
-  sram_emulator #(
-      .NumWords (DataDepthA),
-      .DataWidth(DataWidthA)
-  ) i_sram_a (
-      .clk_i(clk_i),
-      .rst_ni(rst_ni),
-      .req_i(1'b1),
-      .we_i(1'b0),
-      .addr_i(sram_a_addr),
-      .wdata_i('0),
-      .be_i('0),
-      .rdata_o(sram_a_rdata)
-  );
-
-  logic [AddrWidthB-1:0] sram_b_addr;
-  logic [DataWidthB-1:0] sram_b_rdata;
-  sram_emulator #(
-      .NumWords (DataDepthB),
-      .DataWidth(DataWidthB)
-  ) i_sram_b (
-      .clk_i(clk_i),
-      .rst_ni(rst_ni),
-      .req_i(1'b1),
-      .we_i(1'b0),
-      .addr_i(sram_b_addr),
-      .wdata_i('0),
-      .be_i('0),
-      .rdata_o(sram_b_rdata)
-  );
-
-  logic [AddrWidthC-1:0] sram_c_addr;
-  logic [DataWidthC-1:0] sram_c_wdata;
-  logic sram_c_we;
-  sram_emulator #(
-      .NumWords (DataDepthC),
-      .DataWidth(DataWidthC)
-  ) i_sram_c (
-      .clk_i(clk_i),
-      .rst_ni(rst_ni),
-      .req_i(1'b1),
-      .we_i(sram_c_we),
-      .addr_i(sram_c_addr),
-      .wdata_i(sram_c_wdata),
-      .be_i('1),
-      .rdata_o()  // Not used
-  );
-
-  // GEMM Accelerator Top Module
   logic done;
-  gemm_accelerator_top #(
-      .DataWidthA(DataWidthA),
-      .DataWidthB(DataWidthB),
-      .DataWidthC(DataWidthC),
-      .SRAMAddrWidthA(AddrWidthA),
-      .SRAMAddrWidthB(AddrWidthB),
-      .SRAMAddrWidthC(AddrWidthC)
-  ) i_gemm_accelerator (
-      .clk_i(clk_i),
-      .rst_ni(rst_ni),
-      .start_i(start),
-      .M_size_i(M[AddrWidth-1:0]),
-      .K_size_i(K[AddrWidth-1:0]),
-      .N_size_i(N[AddrWidth-1:0]),
-      .sram_a_addr_o(sram_a_addr),
-      .sram_b_addr_o(sram_b_addr),
-      .sram_c_addr_o(sram_c_addr),
-      .sram_a_rdata_i(sram_a_rdata),
-      .sram_b_rdata_i(sram_b_rdata),
-      .sram_c_wdata_o(sram_c_wdata),
-      .sram_c_we_o(sram_c_we),
-      .done_o(done)
+  
+  //---------------------------
+  // Memory
+  //---------------------------
+  // Golden data dump
+  logic signed [OutDataWidth-1:0] G_memory [DataDepth];
+
+  // Memory control
+  logic        [ NumInputA-1:0][AddrWidth-1:0] sram_a_addr;
+  logic        [ NumInputB-1:0][AddrWidth-1:0] sram_b_addr;
+  logic        [NumOutputC-1:0][AddrWidth-1:0] sram_c_addr;
+
+  // Memory access
+  logic signed [ NumInputA-1:0][  InDataWidth-1:0] sram_a_rdata;
+  logic signed [ NumInputB-1:0][  InDataWidth-1:0] sram_b_rdata;
+  logic signed [NumOutputC-1:0][ OutDataWidth-1:0] sram_c_wdata;
+  logic sram_c_we;
+
+  //---------------------------
+  // Declaration of input and output memories
+  //---------------------------
+
+  // Input memory A
+  // Note: this is read only
+  multi_port_memory #(
+    .DataWidth  ( InDataWidth  ),
+    .NumPorts   ( NumInputA    ),
+    .DataDepth  ( DataDepth    ),
+    .AddrWidth  ( AddrWidth    )
+  ) i_sram_a (
+    .clk_i         ( clk_i        ),
+    .rst_ni        ( rst_ni       ),
+    .mem_addr_i    ( sram_a_addr  ),
+    .mem_we_i      ( '0           ),
+    .mem_wr_data_i ( '0           ),
+    .mem_rd_data_o ( sram_a_rdata )
   );
 
-  // Test tasks
-  task automatic load_MKN_a_b(input string dir);
-    begin
-      // Load M, K, N values
-      string file_path;
-      int fd;
-      // build path and open file
-      file_path = {dir, "/MKN.txt"};
-      fd = $fopen(file_path, "r");
-      if (fd == 0) begin
-        $display("ERROR: cannot open %s", file_path);
-        $fatal;
-      end
-      // read three decimal lines: M, K, N
-      if ($fscanf(fd, "%d\n", M) != 1) begin
-        $display("ERROR: failed to read M from %s", file_path);
-        $fatal;
-      end
-      if ($fscanf(fd, "%d\n", K) != 1) begin
-        $display("ERROR: failed to read K from %s", file_path);
-        $fatal;
-      end
-      if ($fscanf(fd, "%d\n", N) != 1) begin
-        $display("ERROR: failed to read N from %s", file_path);
-        $fatal;
-      end
-      $fclose(fd);
-      $display("Loaded sizes: M=%0d K=%0d N=%0d from %s", M, K, N, file_path);
-      // Load matrix A
-      i_sram_a.load_data({dir, "/A.hex"});
-      // Load matrix B
-      i_sram_b.load_data({dir, "/B.hex"});
-    end
-  endtask
+  // Input memory B
+  // Note: this is read only
+  multi_port_memory #(
+    .DataWidth  ( InDataWidth  ),
+    .NumPorts   ( NumInputB    ),
+    .DataDepth  ( DataDepth    ),
+    .AddrWidth  ( AddrWidth    )
+  ) i_sram_b (
+    .clk_i         ( clk_i        ),
+    .rst_ni        ( rst_ni       ),
+    .mem_addr_i    ( sram_b_addr  ),
+    .mem_we_i      ( '0           ),
+    .mem_wr_data_i ( '0           ),
+    .mem_rd_data_o ( sram_b_rdata )
+  );
 
+  // Output memory C
+  // Note: this is write only
+  multi_port_memory #(
+    .DataWidth  ( OutDataWidth ),
+    .NumPorts   ( NumOutputC   ),
+    .DataDepth  ( DataDepth    ),
+    .AddrWidth  ( AddrWidth    )
+  ) i_sram_c (
+    .clk_i         ( clk_i        ),
+    .rst_ni        ( rst_ni       ),
+    .mem_addr_i    ( sram_c_addr  ),
+    .mem_we_i      ( {NumOutputC{sram_c_we}}),
+    .mem_wr_data_i ( sram_c_wdata ),
+    .mem_rd_data_o ( /* unused */ )
+  );
+
+  //---------------------------
+  // DUT instantiation
+  //---------------------------
+  gemm_accelerator_top #(
+    .InDataWidth      ( InDataWidth   ),
+    .OutDataWidth     ( OutDataWidth  ),
+    .AddrWidth        ( AddrWidth     ),
+    .SizeAddrWidth    ( SizeAddrWidth )
+  ) i_dut (
+    .clk_i            ( clk_i         ),
+    .rst_ni           ( rst_ni        ),
+    .start_i          ( start         ),
+    .M_size_i         ( M_i           ),
+    .K_size_i         ( K_i           ),
+    .N_size_i         ( N_i           ),
+    .sram_a_addr_o    ( sram_a_addr   ),
+    .sram_b_addr_o    ( sram_b_addr   ),
+    .sram_c_addr_o    ( sram_c_addr   ),
+    .sram_a_rdata_i   ( sram_a_rdata  ),
+    .sram_b_rdata_i   ( sram_b_rdata  ),
+    .sram_c_wdata_o   ( sram_c_wdata  ),
+    .sram_c_we_o      ( sram_c_we     ),
+    .done_o           ( done          )
+  );
+
+  //---------------------------
+  // Useful tasks and functions
+  //---------------------------
+
+  // Function to calculate golden model
+  function automatic void gemm_golden(
+    input  logic [AddrWidth-1:0] M,
+    input  logic [AddrWidth-1:0] K,
+    input  logic [AddrWidth-1:0] N,
+    input  logic signed [ InDataWidth-1:0] A_i [DataDepth],
+    input  logic signed [ InDataWidth-1:0] B_i [DataDepth],
+    output logic signed [OutDataWidth-1:0] Y_o [DataDepth]
+  );
+      int unsigned m, n, k;
+      int signed acc;
+
+      for (m = 0; m < M; m++) begin
+          for (n = 0; n<N; n++) begin
+            acc = 0;
+            for (k = 0; k < K; k++) begin
+              acc += $signed(A_i[m*K + k]) * $signed(B_i[k*N + n]);
+            end
+            Y_o[m*N + n] = acc;
+          end
+      end
+  endfunction
+
+  // Task to start the accelerator
+  // and wait for it to finish its task
   task automatic start_and_wait_gemm();
     begin
       automatic int cycle_count;
@@ -186,38 +177,88 @@ module tb_one_mac_gemm;
     end
   endtask
 
-  task automatic verify_result_c(input string dir);
+  // Task to verify the resulting matrix
+  task automatic verify_result_c(
+    input logic signed [OutDataWidth-1:0] golden_data [DataDepth],
+    input logic signed [OutDataWidth-1:0] actual_data [DataDepth],
+    input logic [AddrWidth-1:0] num_data,
+    input logic fatal_on_mismatch
+  );
     begin
-      // Load expected matrix C
-      logic [DataWidthC-1:0] expected_c_mem[DataDepthC-1:0];
-      foreach (expected_c_mem[i]) expected_c_mem[i] = '0;
-      $readmemh({dir, "/C.hex"}, expected_c_mem);
       // Compare with SRAM C contents
-      for (int unsigned addr = 0; addr < DataDepthC; addr++) begin
-        if (i_sram_c.sram[addr] !== expected_c_mem[addr]) begin
-          $display("ERROR: Mismatch at address %0d: expected %h, got %h", addr,
-                   expected_c_mem[addr], i_sram_c.sram[addr]);
-          $fatal;
+      for (int unsigned addr = 0; addr < num_data; addr++) begin
+        if (golden_data[addr] !== actual_data[addr]) begin
+          $display("ERROR: Mismatch at address %0d: expected %h, got %h",
+                  addr, golden_data[addr], actual_data[addr]);
+          if (fatal_on_mismatch)
+            $fatal;
         end
       end
       $display("Result matrix C verification passed!");
     end
   endtask
 
+  `include "includes/common_tasks.svh"
+
+  //---------------------------
+  // Start of Testbench
+  //---------------------------
+
+  // Clock generation
+  initial begin
+    clk_i = 1'b0;
+    start = 1'b0;
+    forever #5 clk_i = ~clk_i;  // 100MHz clock
+  end
+
   // Test control
   initial begin
-    wait (rst_ni == 1'b1);
-    @(posedge clk_i);
-    foreach (tasks[i]) begin
-      $display("Starting test task: %s", tasks[i]);
-      // Load data
-      load_MKN_a_b(tasks[i]);
-      // Start GEMM operation and wait for completion
+
+    for (integer num_test = 0; num_test < NumTests; num_test++) begin
+      $display("Starting test number: %0d", num_test);
+
+      M_i = 8;
+      K_i = 8;
+      N_i = 8;
+
+      $display("M: %0d, K: %0d, N: %0d", M_i, K_i, N_i);
+
+      // Initialize memories with random data
+      for (integer m = 0; m < M_i; m++) begin
+        for (integer k = 0; k < K_i; k++) begin
+          i_sram_a.memory[m*K_i + k] = $urandom()%(2**InDataWidth);
+        end
+      end
+
+      for (integer k = 0; k < K_i; k++) begin
+        for (integer n = 0; n < N_i; n++) begin
+          i_sram_b.memory[k*N_i + n] = $urandom()%(2**InDataWidth);
+        end
+      end
+
+      // Generate golden result
+      gemm_golden(
+        M_i,
+        K_i,
+        N_i,
+        i_sram_a.memory,
+        i_sram_b.memory,
+        G_memory
+      );
+
+      // Reset DUT
+      rst_ni = 1'b0;
+      #50;
+      rst_ni = 1'b1;
+
+      clk_delay(3);
+
       start_and_wait_gemm();
-      // Verify result
-      verify_result_c(tasks[i]);
-      $display("Completed test task: %s", tasks[i]);
+      verify_result_c(G_memory, i_sram_c.memory, NumOutputC, 0);
+
+      clk_delay(5);
     end
+    
     $display("All test tasks completed successfully!");
     $finish;
   end
