@@ -1,2 +1,2 @@
-rtl/mac_pe.sv
+rtl/general_mac_pe.sv
 tb/tb_mac_pe.sv
