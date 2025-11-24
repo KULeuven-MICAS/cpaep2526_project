@@ -4,21 +4,25 @@ module tb_one_mac_gemm;
   //---------------------------
 
    // General Parameters
-  localparam int unsigned InDataWidth   = 8;
-  localparam int unsigned OutDataWidth  = 32;
-  localparam int unsigned DataDepth     = 4096;
-  localparam int unsigned AddrWidth     = (DataDepth <= 1) ? 1 : $clog2(DataDepth);
-  localparam int unsigned SizeAddrWidth = 8;
+  parameter int unsigned InDataWidth   = 8;
+  parameter int unsigned OutDataWidth  = 32;
+  parameter int unsigned DataDepth     = 4096;
+  parameter int unsigned AddrWidth     = (DataDepth <= 1) ? 1 : $clog2(DataDepth);
+  parameter int unsigned SizeAddrWidth = 8;
 
-  localparam int unsigned NumInputA  = 1;
-  localparam int unsigned NumInputB  = 1;
-  localparam int unsigned NumOutputC = 1;
+  parameter int unsigned NumInputA  = 1;
+  parameter int unsigned NumInputB  = 1;
+  parameter int unsigned NumOutputC = 1;
 
   //---------------------------
   // Test Parameters
   //---------------------------
-  localparam int unsigned MaxNum = 32;
-  localparam int unsigned NumTests = 1;
+  parameter int unsigned MaxNum    = 32;
+  parameter int unsigned NumTests  = 10;
+
+  parameter int unsigned SingleM = 8;
+  parameter int unsigned SingleK = 8;
+  parameter int unsigned SingleN = 8;
 
   //---------------------------
   // Wires
@@ -129,33 +133,9 @@ module tb_one_mac_gemm;
   //---------------------------
   // Useful tasks and functions
   //---------------------------
-
-  // Function to calculate golden model
-  function automatic void gemm_golden(
-    input  logic [AddrWidth-1:0] M,
-    input  logic [AddrWidth-1:0] K,
-    input  logic [AddrWidth-1:0] N,
-    input  logic signed [ InDataWidth-1:0] A_i [DataDepth],
-    input  logic signed [ InDataWidth-1:0] B_i [DataDepth],
-    output logic signed [OutDataWidth-1:0] Y_o [DataDepth]
-  );
-      int unsigned m, n, k;
-      int signed acc;
-
-      for (m = 0; m < M; m++) begin
-          for (n = 0; n<N; n++) begin
-            acc = 0;
-            for (k = 0; k < K; k++) begin
-              acc += $signed(A_i[m*K + k]) * $signed(B_i[k*N + n]);
-            end
-            Y_o[m*N + n] = acc;
-          end
-      end
-  endfunction
-
-  
   `include "includes/common_tasks.svh"
   `include "includes/test_tasks.svh"
+  `include "includes/test_func.svh"
 
   //---------------------------
   // Start of Testbench
@@ -170,13 +150,24 @@ module tb_one_mac_gemm;
 
   // Test control
   initial begin
+  
+    // Initial reset
+    rst_ni = 1'b0;
+    #50;
+    rst_ni = 1'b1;
 
     for (integer num_test = 0; num_test < NumTests; num_test++) begin
-      $display("Starting test number: %0d", num_test);
+      $display("Test number: %0d", num_test);
 
-      M_i = 8;
-      K_i = 8;
-      N_i = 8;
+      if (NumTests > 1) begin
+        M_i = $urandom_range(1, MaxNum);
+        K_i = $urandom_range(1, MaxNum);
+        N_i = $urandom_range(1, MaxNum);
+      end else begin
+        M_i = SingleM;
+        K_i = SingleK;
+        N_i = SingleN;
+      end
 
       $display("M: %0d, K: %0d, N: %0d", M_i, K_i, N_i);
 
@@ -203,17 +194,23 @@ module tb_one_mac_gemm;
         G_memory
       );
 
-      // Reset DUT
-      rst_ni = 1'b0;
-      #50;
-      rst_ni = 1'b1;
+      // Just delay 1 cycle
+      clk_delay(1);
 
-      clk_delay(3);
-
+      // Execute the GeMM
       start_and_wait_gemm();
-      verify_result_c(G_memory, i_sram_c.memory, NumOutputC, 0);
 
-      clk_delay(5);
+      // Verify the result
+      verify_result_c(
+        G_memory,
+        i_sram_c.memory,
+        NumOutputC,
+        0 // Set this to 1 to make mismatches fatal
+      );
+
+      // Just some trailing cycles
+      // For easier monitoring in waveform
+      clk_delay(10);
     end
     
     $display("All test tasks completed successfully!");
