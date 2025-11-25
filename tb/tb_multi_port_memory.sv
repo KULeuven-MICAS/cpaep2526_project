@@ -24,7 +24,7 @@ module tb_multi_port_memory;
   //---------------------------
   // Design Time Parameters
   //---------------------------
-  
+
   // General parameters
   parameter int unsigned DataWidth  = 8;
   parameter int unsigned NumPorts   = 4;
@@ -105,7 +105,9 @@ module tb_multi_port_memory;
     // Fill in the contents of actual memory with the golden data
     for (int unsigned iter = 0; iter < NumIterations; iter++) begin
       for (int unsigned port = 0; port < NumPorts; port++) begin
+        // Calculate the address
         addr = iter * NumPorts + port;
+        // Load the control signals
         mem_addr   [port] = addr;
         mem_we     [port] = 1'b1;
         mem_wr_data[port] = G_memory[addr];
@@ -125,8 +127,10 @@ module tb_multi_port_memory;
         addr = iter * NumPorts + port;
         mem_addr[port] = addr;
       end
+
       // Get data in next cycle
       clk_delay(1);
+
       // Compare read data with golden data
       for (int unsigned port = 0; port < NumPorts; port++) begin
         addr = iter * NumPorts + port;
