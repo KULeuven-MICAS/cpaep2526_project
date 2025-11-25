@@ -3,6 +3,21 @@ module tb_one_mac_gemm;
   // Design Time Parameters
   //---------------------------
 
+  //---------------------------
+  // DESIGN NOTE:
+  // Parameters are a way to customize your design at
+  // compile time. Here we define the data width,
+  // memory depth, and number of ports for the
+  // multi-port memory instances used in the DUT.
+  //
+  // In other test benches, you can also have test parameters,
+  // such as the number of tests to run, or the sizes of
+  // matrices to be used in the tests.
+  //
+  // You can customize these parameters as needed.
+  // Or you can also add your own parameters.
+  //---------------------------
+
    // General Parameters
   parameter int unsigned InDataWidth   = 8;
   parameter int unsigned OutDataWidth  = 32;
@@ -34,7 +49,7 @@ module tb_one_mac_gemm;
   logic rst_ni;
   logic start;
   logic done;
-  
+
   //---------------------------
   // Memory
   //---------------------------
@@ -54,6 +69,26 @@ module tb_one_mac_gemm;
 
   //---------------------------
   // Declaration of input and output memories
+  //---------------------------
+
+  //---------------------------
+  // DESIGN NOTE:
+  // These are where the memories are instantiated for the DUT.
+  // You can modify the number of ports per memory as needed.
+  // For example, if your design would use 16 parallel input ports,
+  // just modify the NumPorts input parameter.
+  //
+  // This can be useful for increasing your memory bandwidth.
+  // However, take note about the intrinsic costs of doing so.
+  // We don't synthesize it in this exercise but in a real design,
+  // Having increased bandwidth comes at the cost of area, power,
+  // and logic complexity of the memory interconnect.
+  //
+  // Make sure that the connection for the address, data, and wen
+  // signals are consistent with the number of ports.
+  //
+  // Refer to the multi_port_memory.sv and tb_multi_port_memory.sv
+  // file for more details.
   //---------------------------
 
   // Input memory A
@@ -145,10 +180,34 @@ module tb_one_mac_gemm;
     clk_i = 1'b0;
     forever #5 clk_i = ~clk_i;  // 100MHz clock
   end
-  
+
+  //---------------------------
+  // DESIGN NOTE:
+  //
+  // The sequence driver is usually the main stimulus
+  // generator for the test bench. Here is where
+  // you define the sequence of operations to be
+  // performed during the simulation.
+  //
+  // It often starts with an initial reset sequence,
+  // by loading default values and asserting the reset.
+  //
+  // We also do for-loops to run multiple tests
+  // with different input parameters. In this case,
+  // we randomize the matrix sizes for each test.
+  //
+  // You can also customize in here the way
+  // the memories are initialized, how the golden
+  // results are generated, and how the results
+  // are verified.
+  //
+  // Refer to the tasks and functions included above
+  // for more details.
+  //---------------------------
+
   // Sequence driver
   initial begin
-  
+
     // Initial reset
     start = 1'b0;
     rst_ni = 1'b0;
@@ -169,6 +228,30 @@ module tb_one_mac_gemm;
       end
 
       $display("M: %0d, K: %0d, N: %0d", M_i, K_i, N_i);
+
+      //---------------------------
+      // DESIGN NOTE:
+      // You will most likely modify this part
+      // to initialize the input memories
+      // according to your design requirements.
+      //
+      // In here, we simply fill the memories
+      // with random data for testing.
+      //
+      // We assume a row-major storage for both matrices A and B.
+      // Row major means that the elements of each row
+      // are stored in contiguous memory locations.
+      //
+      // We also make the assumption that the matrix output C
+      // will be stored in row-major format as well.
+      //
+      // Take note that you CAN change this part if necessary.
+      // Just make sure that the way you initialize the memories
+      // is consistent with the way you generate the golden results
+      // and the way your DUT reads/writes the data.
+      //
+      // We give you the freedom to verify the tests accordingly.
+      //---------------------------
 
       // Initialize memories with random data
       for (integer m = 0; m < M_i; m++) begin
@@ -211,7 +294,7 @@ module tb_one_mac_gemm;
       // For easier monitoring in waveform
       clk_delay(10);
     end
-    
+
     $display("All test tasks completed successfully!");
     $finish;
   end
