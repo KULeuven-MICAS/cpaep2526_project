@@ -1,5 +1,24 @@
 //-----------------------------
 // Multi-Port Memory Module
+// 
+// Description:
+// This module implements a multi-port memory with parameterizable
+// data width, number of ports, and memory depth. It supports simultaneous
+// read and write operations across multiple ports.
+//
+// Parameters:
+// - DataWidth : Width of each data word.
+// - NumPorts  : Number of read/write ports.
+// - DataDepth : Depth of the memory (number of addressable locations).
+// - AddrWidth : Width of the address bus, calculated based on DataDepth.
+//
+// Ports:
+// - clk_i        : Clock input.
+// - rst_ni       : Active-low reset input.
+// - mem_addr_i   : Array of address inputs for each port.
+// - mem_we_i     : Array of write enable signals for each port.
+// - mem_wr_data_i: Array of data inputs for write operations.
+// - mem_rd_data_o: Array of data outputs for read operations.
 //-----------------------------
 
 module multi_port_memory #(
@@ -30,6 +49,7 @@ module multi_port_memory #(
   // Memory write access
   always_ff @(posedge clk_i) begin
     for (int i = 0; i < NumPorts; i++) begin
+      // Write when write enable is asserted
       if (mem_we_i[i]) begin
         memory[mem_addr_i[i]] <= mem_wr_data_i[i];
       end
