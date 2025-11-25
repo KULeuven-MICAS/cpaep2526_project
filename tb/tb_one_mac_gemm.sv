@@ -89,6 +89,10 @@ module tb_one_mac_gemm;
   //
   // Refer to the multi_port_memory.sv and tb_multi_port_memory.sv
   // file for more details.
+  //
+  // Take note that in this test, we only set NumPorts = 1
+  // Because our GeMM needs to be modified to support multiple ports.
+  // However, we have left this as an intentional clue that could help you.
   //---------------------------
 
   // Input memory A
