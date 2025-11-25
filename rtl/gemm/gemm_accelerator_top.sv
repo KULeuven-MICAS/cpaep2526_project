@@ -158,6 +158,8 @@ module gemm_accelerator_top #(
   // across different PEs as it can be tricky to debug later on.
   // Plan this very carefully, especially when delaing with the correcet data ports
   // data widths, slicing, valid signals, and so much more.
+  //
+  // Additionally, this MAC PE is already output stationary.
   //---------------------------
 
   // The MAC PE instantiation and data path logics
