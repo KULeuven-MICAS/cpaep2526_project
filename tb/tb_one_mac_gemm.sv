@@ -14,9 +14,7 @@ module tb_one_mac_gemm;
   parameter int unsigned NumInputB  = 1;
   parameter int unsigned NumOutputC = 1;
 
-  //---------------------------
   // Test Parameters
-  //---------------------------
   parameter int unsigned MaxNum    = 32;
   parameter int unsigned NumTests  = 10;
 
@@ -27,6 +25,7 @@ module tb_one_mac_gemm;
   //---------------------------
   // Wires
   //---------------------------
+
   // Size control
   logic [SizeAddrWidth-1:0] M_i, K_i, N_i;
 
@@ -60,10 +59,10 @@ module tb_one_mac_gemm;
   // Input memory A
   // Note: this is read only
   multi_port_memory #(
-    .DataWidth  ( InDataWidth  ),
-    .NumPorts   ( NumInputA    ),
-    .DataDepth  ( DataDepth    ),
-    .AddrWidth  ( AddrWidth    )
+    .DataWidth     ( InDataWidth  ),
+    .NumPorts      ( NumInputA    ),
+    .DataDepth     ( DataDepth    ),
+    .AddrWidth     ( AddrWidth    )
   ) i_sram_a (
     .clk_i         ( clk_i        ),
     .rst_ni        ( rst_ni       ),
@@ -76,10 +75,10 @@ module tb_one_mac_gemm;
   // Input memory B
   // Note: this is read only
   multi_port_memory #(
-    .DataWidth  ( InDataWidth  ),
-    .NumPorts   ( NumInputB    ),
-    .DataDepth  ( DataDepth    ),
-    .AddrWidth  ( AddrWidth    )
+    .DataWidth     ( InDataWidth  ),
+    .NumPorts      ( NumInputB    ),
+    .DataDepth     ( DataDepth    ),
+    .AddrWidth     ( AddrWidth    )
   ) i_sram_b (
     .clk_i         ( clk_i        ),
     .rst_ni        ( rst_ni       ),
@@ -92,10 +91,10 @@ module tb_one_mac_gemm;
   // Output memory C
   // Note: this is write only
   multi_port_memory #(
-    .DataWidth  ( OutDataWidth ),
-    .NumPorts   ( NumOutputC   ),
-    .DataDepth  ( DataDepth    ),
-    .AddrWidth  ( AddrWidth    )
+    .DataWidth     ( OutDataWidth ),
+    .NumPorts      ( NumOutputC   ),
+    .DataDepth     ( DataDepth    ),
+    .AddrWidth     ( AddrWidth    )
   ) i_sram_c (
     .clk_i         ( clk_i        ),
     .rst_ni        ( rst_ni       ),
@@ -138,7 +137,7 @@ module tb_one_mac_gemm;
   `include "includes/test_func.svh"
 
   //---------------------------
-  // Start of testbench
+  // Test control
   //---------------------------
 
   // Clock generation
@@ -146,8 +145,8 @@ module tb_one_mac_gemm;
     clk_i = 1'b0;
     forever #5 clk_i = ~clk_i;  // 100MHz clock
   end
-
-  // Test control
+  
+  // Sequence driver
   initial begin
   
     // Initial reset
