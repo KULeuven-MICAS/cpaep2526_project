@@ -1,12 +1,33 @@
-//--------------------------
+//-----------------------
 // Simple MAC processing element
-// - Does a multiply and add
-// - Accumulates the output if inputs are valid
-//--------------------------
+// 
+// Description:
+// This module implements a simple Multiply-Accumulate (MAC) processing element (PE)
+// that can handle multiple input pairs simultaneously. It takes in multiple pairs of
+// input operands, performs multiplication on each pair, and accumulates the results.
+// The PE supports initialization and accumulation control signals.
+// This has an output stationary structure.
+//
+// Parameters:
+// - InDataWidth  : Width of the input data (default: 8 bits)
+// - NumInputs    : Number of input pairs to process simultaneously (default: 1)
+// - OutDataWidth : Width of the output data (default: 32 bits)
+//
+// Ports:
+// - clk_i        : Clock input
+// - rst_ni       : Active-low reset input
+// - a_i         : Input operand A (array of NumInputs elements)
+// - b_i         : Input operand B (array of NumInputs elements)
+// - a_valid_i    : Valid signal for input A
+// - b_valid_i    : Valid signal for input B
+// - init_save_i  : Initialization signal for saving the first multiplication result
+// - acc_clr_i    : Clear signal for the accumulator
+// - c_o          : Output accumulated result
+//-----------------------
 
 module general_mac_pe #(
   parameter int unsigned InDataWidth  = 8,
-  parameter int unsigned NumInputs    = 4,
+  parameter int unsigned NumInputs    = 1,
   parameter int unsigned OutDataWidth = 32
 )(
   // Clock and reset

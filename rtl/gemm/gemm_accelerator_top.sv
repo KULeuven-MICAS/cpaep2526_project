@@ -100,7 +100,8 @@ module gemm_accelerator_top #(
   //---------------------------
   // DESIGN NOTE:
   // This part is the address generation logic for the input and output SRAMs.
-  // We make the assumption that the matrices are stored in row-major order.
+  // In our example, we made the assumption that both matrices A and B
+  // are stored in row-major order.
   //
   // Please adjust this part to align with your designed memory layout
   // The counters are used for the matrix A and matrix B address generation;
@@ -160,6 +161,7 @@ module gemm_accelerator_top #(
   // data widths, slicing, valid signals, and so much more.
   //
   // Additionally, this MAC PE is already output stationary.
+  // You have the freedom to change the dataflow as you see fit.
   //---------------------------
 
   // The MAC PE instantiation and data path logics
