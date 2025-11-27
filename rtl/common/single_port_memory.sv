@@ -1,30 +1,33 @@
 //-----------------------------
-// Multi-Port Memory Module
-// 
-// Description:
-// This module implements a multi-port memory with parameterizable
-// data width, number of ports, and memory depth. It supports simultaneous
-// read and write operations across multiple ports.
+// Single Port Memory Module
+//
+// Description: This module implements a single-port memory with
+// configurable data width and depth. It supports synchronous write
+// operations and combinational read operations.
 //
 // Parameters:
-// - DataWidth : Width of each data word.
-// - DataDepth : Depth of the memory (number of addressable locations).
-// - AddrWidth : Width of the address bus, calculated based on DataDepth.
+// - DataWidth: Width of the data bus (default: 8 bits)
+// - DataDepth: Depth of the memory (default: 4096 entries)
+// - AddrWidth: Width of the address bus (calculated based on DataDepth)
 //
 // Ports:
-// - clk_i        : Clock input.
-// - rst_ni       : Active-low reset input.
-// - mem_addr_i   : Array of address inputs for each port.
-// - mem_we_i     : Array of write enable signals for each port.
-// - mem_wr_data_i: Array of data inputs for write operations.
-// - mem_rd_data_o: Array of data outputs for read operations.
+// - clk_i: Clock input
+// - rst_ni: Active low reset input
+// - mem_addr_i: Memory address input
+// - mem_we_i: Memory write enable input
+// - mem_wr_data_i: Memory write data input
+// - mem_rd_data_o: Memory read data output
 //-----------------------------
 
+//-----------------------------
+// DESIGN NOTE:
+// You are allowed to modify the Datadepth and
+// DataWidth parameters to suit your design requirements.
+//-----------------------------
 module single_port_memory #(
     parameter int unsigned DataWidth = 8,
     parameter int unsigned DataDepth = 4096,
     parameter int unsigned AddrWidth = (DataDepth <= 1) ? 1 : $clog2(DataDepth)
-
 ) (
     input  logic                        clk_i,
     input  logic                        rst_ni,

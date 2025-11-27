@@ -1,55 +1,38 @@
 # CPAEP Project Template
 - This project template is for the CPAEP class for the AY 2025-2026 in KU Leuven
 - This template serves as a base repository for running RTL simulations.
-- Preferrably, setup your work in a linux subsystem
+- Preferrably, setup your work in a linux subsystem with Questasim tool.
+- Please use the ESAT computers for this exercise.
 
 # Quick Start
-
-1. First install pixi shell. You do this once if you don't have pixi shell in your environment yet.
+We already prepared the entire Questasim simulation setup for you. Simply invoke the command below to run a simulation without GUI.
 
 ```bash
-curl -fsSL https://pixi.sh/install.sh | bash
+make TEST_MODULE=tb_one_mac_gemm questasim-run
 ```
 
-2a. Initialize the pixi environment
+To run with a GUI do:
 
 ```bash
-pixi shell
+make TEST_MODULE=tb_one_mac_gemm questasim-run-gui
 ```
 
-2b. Check if Verilator works. It should return the latest version.
+In either case, you should see a log that says:
 
 ```bash
-verilator --version
-```
-
-3. Build a verilator executable
-
-```bash
-make TEST_MODULE=tb_mac_pe all
-```
-
-4. Run the executable
-
-```bash
-bin/tb_mac_pe
-```
-
-The last command show show a log of outputs:
-
-```bash
-A:    45, B:    86, OUT:  3870
-A:    38, B:     8, OUT:  4174
-A:    55, B:    67, OUT:  7859
-A:     7, B:    91, OUT:  8496
-A:    37, B:    62, OUT: 10790
-A:    93, B:    62, OUT: 16556
-A:    27, B:    12, OUT: 16880
-A:    83, B:    43, OUT: 20449
-A:     9, B:    97, OUT: 21322
-A:    60, B:    34, OUT: 23362
-- tb/tb_mac_pe.sv:78: Verilog $finish
-- S i m u l a t i o n   R e p o r t: Verilator 5.034 2025-02-24
-- Verilator: $finish at 210ps; walltime 0.006 s; speed 25.882 ns/s
-- Verilator: cpu 0.008 s on 1 threads; alloced 249 MB
+Some long log of the previous tests.
+...
+# Test number: 8
+# M: 9, K: 13, N: 10
+# GEMM operation completed in 1170 cycles
+# Result matrix C verification passed!
+# Test number: 9
+# M: 11, K: 16, N: 3
+# GEMM operation completed in 528 cycles
+# Result matrix C verification passed!
+# All test tasks completed successfully!
+# ** Note: $finish    : tb/tb_one_mac_gemm.sv(286)
+#    Time: 410816 ns  Iteration: 0  Instance: /tb_one_mac_gemm
+# End time: 10:12:59 on Nov 27,2025, Elapsed time: 0:00:01
+# Errors: 0, Warnings: 3
 ```
