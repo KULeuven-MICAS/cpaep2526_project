@@ -19,14 +19,14 @@ module tb_one_mac_gemm;
   //---------------------------
 
   // General Parameters
-  parameter int unsigned InDataWidth = 8;
-  parameter int unsigned OutDataWidth = 32;
-  parameter int unsigned DataDepth = 4096;
-  parameter int unsigned AddrWidth = (DataDepth <= 1) ? 1 : $clog2(DataDepth);
+  parameter int unsigned InDataWidth   = 8;
+  parameter int unsigned OutDataWidth  = 32;
+  parameter int unsigned DataDepth     = 4096;
+  parameter int unsigned AddrWidth     = (DataDepth <= 1) ? 1 : $clog2(DataDepth);
   parameter int unsigned SizeAddrWidth = 8;
 
   // Test Parameters
-  parameter int unsigned MaxNum = 32;
+  parameter int unsigned MaxNum   = 32;
   parameter int unsigned NumTests = 10;
 
   parameter int unsigned SingleM = 8;
@@ -41,21 +41,21 @@ module tb_one_mac_gemm;
   logic [SizeAddrWidth-1:0] M_i, K_i, N_i;
 
   // Clock, reset, and other signals
-  logic                           clk_i;
-  logic                           rst_ni;
-  logic                           start;
-  logic                           done;
+  logic clk_i;
+  logic rst_ni;
+  logic start;
+  logic done;
 
   //---------------------------
   // Memory
   //---------------------------
   // Golden data dump
-  logic signed [OutDataWidth-1:0] G_memory     [DataDepth];
+  logic signed [OutDataWidth-1:0] G_memory [DataDepth];
 
   // Memory control
-  logic        [   AddrWidth-1:0] sram_a_addr;
-  logic        [   AddrWidth-1:0] sram_b_addr;
-  logic        [   AddrWidth-1:0] sram_c_addr;
+  logic [AddrWidth-1:0] sram_a_addr;
+  logic [AddrWidth-1:0] sram_b_addr;
+  logic [AddrWidth-1:0] sram_c_addr;
 
   // Memory access
   logic signed [ InDataWidth-1:0] sram_a_rdata;
@@ -70,95 +70,88 @@ module tb_one_mac_gemm;
   //---------------------------
   // DESIGN NOTE:
   // These are where the memories are instantiated for the DUT.
-  // You can modify the number of ports per memory as needed.
-  // For example, if your design would use 16 parallel input ports,
-  // just modify the NumPorts input parameter.
+  // You can modify the data width and data depth parameters.
   //
   // This can be useful for increasing your memory bandwidth.
-  // However, take note about the intrinsic costs of doing so.
-  // We don't synthesize it in this exercise but in a real design,
-  // Having increased bandwidth comes at the cost of area, power,
-  // and logic complexity of the memory interconnect.
+  // However, you need to think about and take care of how to,
+  // initialize the memories accordingly.
+  // That includes knowing how to pack the data accordingly.
   //
   // Make sure that the connection for the address, data, and wen
   // signals are consistent with the number of ports.
   //
-  // Refer to the multi_port_memory.sv and tb_multi_port_memory.sv
-  // file for more details.
-  //
-  // Take note that in this test, we only set NumPorts = 1
-  // Because our GeMM needs to be modified to support multiple ports.
-  // However, we have left this as an intentional clue that could help you.
+  // Refer to the single_port_memory.sv and 
+  // tb_single_port_memory.sv file for more details.
   //---------------------------
 
   // Input memory A
   // Note: this is read only
   single_port_memory #(
-      .DataWidth(InDataWidth),
-      .DataDepth(DataDepth),
-      .AddrWidth(AddrWidth)
+    .DataWidth     ( InDataWidth  ),
+    .DataDepth     ( DataDepth    ),
+    .AddrWidth     ( AddrWidth    )
   ) i_sram_a (
-      .clk_i        (clk_i),
-      .rst_ni       (rst_ni),
-      .mem_addr_i   (sram_a_addr),
-      .mem_we_i     ('0),
-      .mem_wr_data_i('0),
-      .mem_rd_data_o(sram_a_rdata)
+    .clk_i         ( clk_i        ),
+    .rst_ni        ( rst_ni       ),
+    .mem_addr_i    ( sram_a_addr  ),
+    .mem_we_i      ( '0           ),
+    .mem_wr_data_i ( '0           ),
+    .mem_rd_data_o ( sram_a_rdata )
   );
 
   // Input memory B
   // Note: this is read only
   single_port_memory #(
-      .DataWidth(InDataWidth),
-      .DataDepth(DataDepth),
-      .AddrWidth(AddrWidth)
+    .DataWidth     ( InDataWidth  ),
+    .DataDepth     ( DataDepth    ),
+    .AddrWidth     ( AddrWidth    )
   ) i_sram_b (
-      .clk_i        (clk_i),
-      .rst_ni       (rst_ni),
-      .mem_addr_i   (sram_b_addr),
-      .mem_we_i     ('0),
-      .mem_wr_data_i('0),
-      .mem_rd_data_o(sram_b_rdata)
+    .clk_i         ( clk_i        ),
+    .rst_ni        ( rst_ni       ),
+    .mem_addr_i    ( sram_b_addr  ),
+    .mem_we_i      ( '0           ),
+    .mem_wr_data_i ( '0           ),
+    .mem_rd_data_o ( sram_b_rdata )
   );
 
   // Output memory C
   // Note: this is write only
   single_port_memory #(
-      .DataWidth(OutDataWidth),
-      .DataDepth(DataDepth),
-      .AddrWidth(AddrWidth)
+    .DataWidth     ( OutDataWidth ),
+    .DataDepth     ( DataDepth    ),
+    .AddrWidth     ( AddrWidth    )
   ) i_sram_c (
-      .clk_i        (clk_i),
-      .rst_ni       (rst_ni),
-      .mem_addr_i   (sram_c_addr),
-      .mem_we_i     (sram_c_we),
-      .mem_wr_data_i(sram_c_wdata),
-      .mem_rd_data_o(  /* unused */)
+    .clk_i         ( clk_i        ),
+    .rst_ni        ( rst_ni       ),
+    .mem_addr_i    ( sram_c_addr  ),
+    .mem_we_i      ( sram_c_we    ),
+    .mem_wr_data_i ( sram_c_wdata ),
+    .mem_rd_data_o ( /* unused */ )
   );
 
   //---------------------------
   // DUT instantiation
   //---------------------------
   gemm_accelerator_top #(
-      .InDataWidth  (InDataWidth),
-      .OutDataWidth (OutDataWidth),
-      .AddrWidth    (AddrWidth),
-      .SizeAddrWidth(SizeAddrWidth)
+    .InDataWidth   ( InDataWidth   ),
+    .OutDataWidth  ( OutDataWidth  ),
+    .AddrWidth     ( AddrWidth     ),
+    .SizeAddrWidth ( SizeAddrWidth )
   ) i_dut (
-      .clk_i         (clk_i),
-      .rst_ni        (rst_ni),
-      .start_i       (start),
-      .M_size_i      (M_i),
-      .K_size_i      (K_i),
-      .N_size_i      (N_i),
-      .sram_a_addr_o (sram_a_addr),
-      .sram_b_addr_o (sram_b_addr),
-      .sram_c_addr_o (sram_c_addr),
-      .sram_a_rdata_i(sram_a_rdata),
-      .sram_b_rdata_i(sram_b_rdata),
-      .sram_c_wdata_o(sram_c_wdata),
-      .sram_c_we_o   (sram_c_we),
-      .done_o        (done)
+    .clk_i          ( clk_i        ),
+    .rst_ni         ( rst_ni       ),
+    .start_i        ( start        ),
+    .N_size_i       ( N_i          ),
+    .M_size_i       ( M_i          ),
+    .K_size_i       ( K_i          ),
+    .sram_a_addr_o  ( sram_a_addr  ),
+    .sram_b_addr_o  ( sram_b_addr  ),
+    .sram_c_addr_o  ( sram_c_addr  ),
+    .sram_a_rdata_i ( sram_a_rdata ),
+    .sram_b_rdata_i ( sram_b_rdata ),
+    .sram_c_wdata_o ( sram_c_wdata ),
+    .sram_c_we_o    ( sram_c_we    ),
+    .done_o         ( done         )
   );
 
   //---------------------------
@@ -242,12 +235,19 @@ module tb_one_mac_gemm;
       // We also make the assumption that the matrix output C
       // will be stored in row-major format as well.
       //
-      // Take note that you CAN change this part if necessary.
+      // Take note that you WILL change this part according to your design.
       // Just make sure that the way you initialize the memories
       // is consistent with the way you generate the golden results
       // and the way your DUT reads/writes the data.
       //
-      // We give you the freedom to verify the tests accordingly.
+      // The tricky part here is that since the data accesses are
+      // shared within a single long bit-width (suppose you use longer)
+      // memory word. For example, if your memory word is 32 bits wide
+      // and your data width is 8 bits, then you can pack
+      // 4 data elements in a single memory word.
+      // So when you initialize the memory, you need to
+      // make sure that the data elements are packed
+      // correctly within each memory word.
       //---------------------------
 
       // Initialize memories with random data
