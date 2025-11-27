@@ -13,7 +13,6 @@
 //
 // Parameters:
 // - DataWidth : Width of each data word.
-// - NumPorts  : Number of read/write ports.
 // - DataDepth : Depth of the memory (number of addressable locations).
 // - AddrWidth : Width of the address bus, calculated based on DataDepth.
 //--------------------------
@@ -48,22 +47,21 @@ module tb_single_port_memory;
   logic signed [DataWidth-1:0] mem_wr_data;
   logic signed [DataWidth-1:0] mem_rd_data;
   // Golden data dump
-  logic signed [DataWidth-1:0] G_memory    [DataDepth];
+  logic signed [DataWidth-1:0] G_memory [DataDepth];
 
   //---------------------------
   // DUT instantiation
   //---------------------------
   single_port_memory #(
-      .DataWidth(DataWidth),
-      .DataDepth(DataDepth),
-      .AddrWidth(AddrWidth)
+    .DataWidth     ( DataWidth   ),
+    .DataDepth     ( DataDepth   )
   ) i_sram_a (
-      .clk_i        (clk_i),
-      .rst_ni       (rst_ni),
-      .mem_addr_i   (mem_addr),
-      .mem_we_i     (mem_we),
-      .mem_wr_data_i(mem_wr_data),
-      .mem_rd_data_o(mem_rd_data)
+    .clk_i         ( clk_i       ),
+    .rst_ni        ( rst_ni      ),
+    .mem_addr_i    ( mem_addr    ),
+    .mem_we_i      ( mem_we      ),
+    .mem_wr_data_i ( mem_wr_data ),
+    .mem_rd_data_o ( mem_rd_data )
   );
 
   //---------------------------
@@ -118,16 +116,15 @@ module tb_single_port_memory;
     // Read and compare the loaded data to the golden data
     for (int unsigned iter = 0; iter < NumIterations; iter++) begin
       // Read the data first
-      addr = iter;
-      mem_addr = addr;
+      mem_addr = iter;
       // Get data in next cycle
       clk_delay(1);
 
       // Compare read data with golden data
       addr = iter;
       if (mem_rd_data !== G_memory[addr]) begin
-        $error("Data mismatch at address %0d: expected %0d, got %0d", addr, G_memory[addr],
-               mem_rd_data);
+        $error("Data mismatch at address %0d: expected %0d, got %0d",
+          addr, G_memory[addr], mem_rd_data);
       end
     end
 
